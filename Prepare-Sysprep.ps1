@@ -54,9 +54,7 @@ function Confirm-Continue ($q) {
     }
 }
 
-# ------------------------------------------------------------------
 # 0. Adminrechte
-# ------------------------------------------------------------------
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
            ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) { Stop-Script "Bitte als Administrator starten (Start-Sysprep.cmd verwenden)." }
@@ -65,9 +63,7 @@ if ([Security.Principal.WindowsIdentity]::GetCurrent().User.Value -eq 'S-1-5-18'
 }
 if ($DryRun) { Write-Warn "DRYRUN - es wird nichts veraendert und kein Sysprep gestartet" }
 
-# ------------------------------------------------------------------
 # 1. Grundpruefungen
-# ------------------------------------------------------------------
 Write-Step "1. Grundpruefungen"
 
 $rebootPending = (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending') -or
@@ -77,7 +73,6 @@ if ($rebootPending) {
 }
 Write-Ok "Kein ausstehender Neustart"
 
-# Reste eines abgebrochenen Sysprep-Laufs
 $genState   = (Get-ItemProperty 'HKLM:\SYSTEM\Setup\Status\SysprepStatus' -ErrorAction SilentlyContinue).GeneralizationState
 $imageState = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\State' -ErrorAction SilentlyContinue).ImageState
 if ($null -ne $genState -and $genState -ne 7) {
@@ -111,9 +106,7 @@ if ($up) {
     Write-Ok "Kein aktives Netzwerk"
 }
 
-# ------------------------------------------------------------------
 # 2. Windows Update stoppen + reservierter Speicher
-# ------------------------------------------------------------------
 Write-Step "2. Windows Update / Reservierter Speicher"
 
 foreach ($svc in 'wuauserv', 'UsoSvc', 'BITS') {
@@ -138,14 +131,14 @@ if ($state -match 'deaktiviert|disabled') {
     if ($state -match 'deaktiviert|disabled') {
         Write-Ok "Reservierter Speicher deaktiviert"
     } elseif (Test-Path $rsFlag) {
-        # Reparatur wurde schon eingetragen und neu gestartet, trotzdem wieder belegt
+        
         Remove-Item $rsFlag -Force
         $scen = (Get-ItemProperty $rmKey -ErrorAction SilentlyContinue).ActiveScenario
         Stop-Script ("Reservierter Speicher ist nach dem Neustart wieder belegt (ActiveScenario = $scen). " +
                      "Windows Update hat beim Start erneut etwas angefasst. Update-Verlauf pruefen, ausstehende " +
                      "Updates mit Netzwerk komplett installieren, neu starten und Skript erneut ausfuehren.")
     } else {
-        # Speicher ist durch ein haengendes Update-Szenario belegt
+        
         Set-ItemProperty -Path $rmKey -Name ActiveScenario      -Value 0 -Type DWord
         Set-ItemProperty -Path $rmKey -Name ShippedWithReserves -Value 0 -Type DWord
         Set-Content -Path $rsFlag -Value (Get-Date -Format 'yyyy-MM-dd HH:mm') -Encoding ASCII
@@ -155,9 +148,7 @@ if ($state -match 'deaktiviert|disabled') {
 }
 if (-not $DryRun -and ($state -match 'deaktiviert|disabled') -and (Test-Path $rsFlag)) { Remove-Item $rsFlag -Force }
 
-# ------------------------------------------------------------------
 # 3. Ruhezustand / Schnellstart
-# ------------------------------------------------------------------
 Write-Step "3. Ruhezustand / Schnellstart"
 if ($DryRun) {
     Write-Info "[DryRun] wuerde 'powercfg /h off' ausfuehren"
@@ -166,9 +157,7 @@ if ($DryRun) {
     Write-Ok "Ruhezustand und Schnellstart deaktiviert (sonst scheitert der FOG-Capture an NTFS)"
 }
 
-# ------------------------------------------------------------------
 # 4. Sprachen + Appx-Pakete
-# ------------------------------------------------------------------
 Write-Step "4. Sprachen und Appx-Pakete"
 $langScript = Join-Path $ScriptDir 'Prepare-Languages.ps1'
 if (-not (Test-Path $langScript)) { Stop-Script "Prepare-Languages.ps1 nicht gefunden in $ScriptDir" }
@@ -177,7 +166,6 @@ if (-not (Test-Path $langScript)) { Stop-Script "Prepare-Languages.ps1 nicht gef
 $Lang = $global:TargetUILanguage
 if (-not $Lang) { Stop-Script "Zielsprache konnte nicht ermittelt werden." }
 
-# ------------------------------------------------------------------
 # 5. XAML-Workaround (KB5072911)
 #    Seit den Updates ab Juli 2025 registrieren sich unter 24H2/25H2 drei
 #    XAML-Pakete nicht rechtzeitig -> schwarzer Bildschirm nach der Anmeldung.
@@ -185,7 +173,6 @@ if (-not $Lang) { Stop-Script "Zielsprache konnte nicht ermittelt werden." }
 #    Explorer startet. Das temporaere OOBE-Konto defaultuser0 wird uebersprungen.
 #    Entfernen, sobald Microsoft KB5072911 offiziell behebt:
 #      reg delete "HKLM\SOFTWARE\Microsoft\Active Setup\Installed Components\{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}" /f
-# ------------------------------------------------------------------
 Write-Step "5. XAML-Workaround (KB5072911)"
 
 $XamlScriptPath  = Join-Path $SetupDir 'RegisterXamlPackages.cmd'
@@ -228,9 +215,7 @@ if ($DryRun) {
     Write-Ok "Active Setup eingetragen ($ActiveSetupGuid, Version $version)"
 }
 
-# ------------------------------------------------------------------
 # 6. unattend.xml erzeugen
-# ------------------------------------------------------------------
 Write-Step "6. unattend.xml erzeugen"
 $TimeZone = (Get-TimeZone).Id
 
@@ -273,9 +258,7 @@ if ($DryRun) {
     Write-Info "Sprache: $Lang | Zeitzone: $TimeZone | Treiber erhalten | SkipRearm | OOBE interaktiv"
 }
 
-# ------------------------------------------------------------------
 # 7. Sysprep
-# ------------------------------------------------------------------
 Write-Step "7. Sysprep"
 
 if ($DryRun -or $NoSysprep) {
