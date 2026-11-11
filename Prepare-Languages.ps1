@@ -24,9 +24,9 @@ function Write-Ok   ($m) { Write-Host "  [OK]    $m" -ForegroundColor Green }
 function Write-Warn ($m) { Write-Host "  [WARN]  $m" -ForegroundColor Yellow }
 function Write-Info ($m) { Write-Host "  [INFO]  $m" -ForegroundColor Cyan }
 
-# ------------------------------------------------------------------
+
 # 1. Sprachen ermitteln
-# ------------------------------------------------------------------
+
 Write-Host "`n=== Sprachen ermitteln ===" -ForegroundColor Cyan
 
 # Installationssprache (Basis, laesst sich nicht deinstallieren)
@@ -47,9 +47,9 @@ Write-Info "Basissprache:   $baseLang"
 Write-Info "Anzeigesprache: $uiLang"
 Write-Info "Behalten:       $($keep -join ', ')"
 
-# ------------------------------------------------------------------
+
 # 2. Nicht benoetigte Sprachen entfernen
-# ------------------------------------------------------------------
+
 Write-Host "`n=== Nicht benoetigte Sprachen entfernen ===" -ForegroundColor Cyan
 
 if (Get-Command Get-InstalledLanguage -ErrorAction SilentlyContinue) {
@@ -67,9 +67,9 @@ if (Get-Command Get-InstalledLanguage -ErrorAction SilentlyContinue) {
     Write-Warn "LanguagePackManagement-Modul nicht vorhanden - Schritt uebersprungen"
 }
 
-# ------------------------------------------------------------------
+
 # 3. Nur pro Benutzer installierte Appx-Pakete entfernen
-# ------------------------------------------------------------------
+
 Write-Host "`n=== Nicht bereitgestellte Appx-Pakete entfernen ===" -ForegroundColor Cyan
 
 $provisioned = (Get-AppxProvisionedPackage -Online).DisplayName
@@ -81,7 +81,7 @@ $candidates  = Get-AppxPackage -AllUsers | Where-Object {
 
 $reinstall = @()
 foreach ($p in $candidates) {
-    # Wird das LXP einer behaltenen Sprache entfernt -> spaeter nachinstallieren
+    
     if ($p.Name -match '^Microsoft\.LanguageExperiencePack(.+)$' -and $keep -contains $Matches[1]) {
         $reinstall += $Matches[1]
     }
@@ -102,9 +102,9 @@ foreach ($p in $candidates) {
 }
 if (-not $candidates) { Write-Ok "Keine Pakete gefunden, die Sysprep blockieren" }
 
-# ------------------------------------------------------------------
+
 # 4. Nachinstallation der Anzeigesprache nach dem Deploy
-# ------------------------------------------------------------------
+
 $reinstall = $reinstall | Select-Object -Unique
 if ($reinstall) {
     Write-Host "`n=== Sprach-Nachinstallation einrichten ===" -ForegroundColor Cyan
@@ -146,9 +146,9 @@ try {
     }
 }
 
-# ------------------------------------------------------------------
+
 # Ergebnis fuer unattend.xml
-# ------------------------------------------------------------------
+
 Write-Host "`n=== Ergebnis ===" -ForegroundColor Cyan
 Write-Info "Sprache fuer unattend.xml (UILanguage / UserLocale / InputLocale): $targetLang"
 $global:TargetUILanguage = $targetLang
