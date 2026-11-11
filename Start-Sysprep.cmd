@@ -1,7 +1,7 @@
 @echo off
 :: ------------------------------------------------------------------
 :: Start-Sysprep.cmd
-:: Doppelklick genuegt - startet sich selbst als Administrator und
+:: Doppelklick genuegt startet sich selbst als Administrator und
 :: ruft Prepare-Sysprep.ps1 aus demselben Ordner auf.
 ::
 :: Optionen (aus einer Admin-CMD):
